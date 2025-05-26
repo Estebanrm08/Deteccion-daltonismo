@@ -46,6 +46,13 @@ function pickRandomImages(images: string[], n: number): string[] {
   return selected;
 }
 
+function preloadImages(imagePaths: string[]) {
+  imagePaths.forEach(src => {
+    const img = new Image();
+    img.src = `/images/${src}`;
+  });
+}
+
 export default function Welcome() {
   const [started, setStarted] = useState(false);
   const [round, setRound] = useState(0);
@@ -73,9 +80,19 @@ export default function Welcome() {
     if (started) {
       const selectedImages = pickRandomImages(allImageFiles, roundsCount);
       setImagesForRounds(selectedImages);
+      preloadImages(selectedImages);
     }
   }, [started]);
 
+  useEffect(() => {
+    if (round + 1 < roundsCount && imagesForRounds.length > 0) {
+      const nextImage = imagesForRounds[round + 1];
+      if (nextImage) {
+        preloadImages([nextImage]);
+      }
+    }
+  }, [round, imagesForRounds]);
+  
   const currentBaseImage = imagesForRounds[round] ? `/images/${imagesForRounds[round]}` : null;
 
   const handleSelection = (img: ImageItem) => {

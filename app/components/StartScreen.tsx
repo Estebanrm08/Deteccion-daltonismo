@@ -11,7 +11,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
       <h6>Bienvenido al Test de Daltonismo</h6>
 
       <img
-        src="/public/eye-icon.svg" 
+        src="/eye-icon.svg" 
         alt="Daltonismo ilustración"
         style={{
             width: '200px',
