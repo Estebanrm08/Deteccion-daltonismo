@@ -42,7 +42,7 @@ function analyzeResults(results: Result[]) {
   }, {} as Record<string, number>);
   const likelyDeficiency = Object.entries(colorDeficiencyCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'No identificado';
 
-  const speedLabel = avgTime < 3 ? 'rápido' : avgTime < 6 ? 'moderado' : 'lento';
+  const speedLabel = avgTime < 4 ? 'rápido' : avgTime < 8 ? 'moderado' : 'lento';
 
   const feedbackMap: Record<string, string> = {
     protanopia: 'Podrías tener dificultades con los tonos rojos.',
