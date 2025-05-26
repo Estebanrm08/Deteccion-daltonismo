@@ -1,15 +1,94 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+html, body {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  min-height: 100vh;
+  margin: 0;
+  background: linear-gradient(to right, #7c3aed, #ec4899, #ef4444);
+  color: white;
 }
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
-
-  @media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) {
+  html, body {
     color-scheme: dark;
   }
 }
+
+h1 {
+  position: center;
+  font-weight: 800;
+  font-size: 3.2rem; /* 5xl */
+  margin-top: 1rem;
+  margin-left: 7rem;
+  margin-bottom: 2rem;
+}
+
+h2 {
+  font-weight: 600;
+  font-size: 1.5rem; /* 4xl */
+  margin-top: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  font-weight: 700;
+  font-size: 1.5rem; /* 3xl */
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+h4 {
+  position: center;
+  font-weight: 700;
+  font-size: 1.6rem; /* 2xl */
+  margin-top: 1.6rem;
+  margin-bottom: 4px;
+  margin-left: 14rem;
+}
+
+h5 {
+  font-weight: 700;
+  font-size: 3.1rem; /* xl */
+  margin-top: 1.4rem;
+  margin-bottom: 20px;
+}
+
+h6 {
+  font-weight: 700;
+  font-size: 3rem; /* lg */
+  margin-top: 8rem;
+  margin-bottom: 100px;
+  margin-left: -50px;
+  white-space: nowrap; /* evita salto de línea */
+}
+
+p {
+  font-size: 1.125rem; /* lg */
+  margin-bottom: 0.75rem;
+}
+
+button {
+  font-size: 1rem; /* lg */
+  background-color: white;
+  color: #7c3aed; /* purple-700 */
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem; /* rounded */
+  box-shadow: 0 1.8px 2px rgba(0, 0, 0, 0.829);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #4bdbff; /* purple-100 */
+}
+
+main {
+  max-width: 64rem; /* 4xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.5rem; /* 6 */
+}
+

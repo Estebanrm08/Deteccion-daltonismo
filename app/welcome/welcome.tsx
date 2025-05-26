@@ -1,89 +1,317 @@
-import logoDark from "./logo-dark.svg";
-import logoLight from "./logo-light.svg";
+import React, { useState, useEffect } from 'react';
+import StartScreen from '../components/StartScreen';
+import FacialLandmarks from '../components/FacialLandmarks';
+import SimulatedImageGrid from '../components/SimulatedImageGrid';
+import ImageGrid from '../components/ImageGrid';
+import Timer from '../components/Timer';
+import ResultScreen from '../components/ResultScreen';
+import type { ImageItem } from '../components/ImageGrid';
+import ResultCharts from '../components/ResultCharts';
 
-export function Welcome() {
+type VisionType = 'normal' | 'protanopia' | 'deuteranopia' | 'tritanopia';
+type SeverityLevel = 0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.6 | 0.8 | 1.0;
+
+type TestResult = {
+  id: string;
+  type: VisionType;
+  severity: SeverityLevel;
+  emotion: string;
+  confidence: number | null;
+  responseTime: number;
+  round: number;
+  position: string; // fila x columna
+  index1to20: number; // posición de 1 a 20 para mostrar
+};
+
+const roundsCount = 5;
+
+const allImageFiles = [
+  "amazonia.jpg", "Art.jpg", "Arte.jpg", "Artesania.jpg", "aves.jpeg",
+  "bandejapaisa.jpg", "bolivar.jpg", "botero.jpg", "botero1.jpg", "botero3.jpg",
+  "buenaventura.jpg", "caligallinaweb.jpg", "colombiapaisake.jpg", "cristorey.jpg", "Cultura.jpg",
+  "Cultura2.jpg", "empanadasvallunas.jpg", "Escobar.jpg", "fauna.jpg", "Florarinsular.jpg",
+  "frutas.jpg", "Iguana.jpg", "luladas.jpg", "micolombia.jpg", "MuseoOro.jpg",
+  "Objetos.jpg", "osonegro.jpg", "Paisaje.jpg", "parquegatos.jpg", "piedra.jpg",
+  "rio.jpg", "Senderismo.jpg", "tertulia.jpg", "tortuga.jpg", "tucan.jpg"
+];
+
+function pickRandomImages(images: string[], n: number): string[] {
+  const copy = [...images];
+  const selected: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const idx = Math.floor(Math.random() * copy.length);
+    selected.push(copy[idx]);
+    copy.splice(idx, 1);
+  }
+  return selected;
+}
+
+export default function Welcome() {
+  const [started, setStarted] = useState(false);
+  const [round, setRound] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isTimerActive, setIsTimerActive] = useState(true);
+  const [lastTime, setLastTime] = useState<number | null>(null);
+
+  // Emoción en vivo detectada (actualiza siempre)
+  const [currentEmotion, setCurrentEmotion] = useState<string>('No detectado');
+  const [currentConfidence, setCurrentConfidence] = useState<number | null>(null);
+
+  // Emoción congelada al seleccionar imagen
+  const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
+  const [selectedConfidence, setSelectedConfidence] = useState<number | null>(null);
+
+  const [results, setResults] = useState<TestResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [imagesForRounds, setImagesForRounds] = useState<string[]>([]);
+  const [simulatedImages, setSimulatedImages] = useState<ImageItem[]>([]);
+
+  // Flag para bloquear selección múltiple en ronda actual
+  const [hasSelected, setHasSelected] = useState(false);
+
+  useEffect(() => {
+    if (started) {
+      const selectedImages = pickRandomImages(allImageFiles, roundsCount);
+      setImagesForRounds(selectedImages);
+    }
+  }, [started]);
+
+  const currentBaseImage = imagesForRounds[round] ? `/images/${imagesForRounds[round]}` : null;
+
+  const handleSelection = (img: ImageItem) => {
+    if (hasSelected) return; // bloquea selección múltiple
+
+    const index = simulatedImages.findIndex(i => i.id === img.id);
+    if (index === -1) return;
+
+    setSelectedIndex(index);
+    setIsTimerActive(false);
+
+    // Congelar emoción y confianza al seleccionar
+    setSelectedEmotion(currentEmotion);
+    setSelectedConfidence(currentConfidence);
+
+    // Si ya hay tiempo registrado, guardar resultado ahora, sino se guardará en efecto
+    if (lastTime !== null) {
+      saveResult(img, index, lastTime);
+    }
+  };
+
+  // Guarda resultado y bloquea selección
+  const saveResult = (img: ImageItem, index: number, time: number) => {
+    const row = Math.floor(index / 5) + 1;
+    const col = (index % 5) + 1;
+    const position = `${row}x${col}`;
+    const index1to20 = index + 1;
+
+    const newResult: TestResult = {
+      id: img.id,
+      type: img.type,
+      severity: img.severity,
+      emotion: selectedEmotion ?? currentEmotion,
+      confidence: selectedConfidence ?? currentConfidence,
+      responseTime: time,
+      round,
+      position,
+      index1to20,
+    };
+
+    setResults(prev => [...prev, newResult]);
+    setHasSelected(true);
+    console.log('📊 Resultado registrado:', newResult);
+  };
+
+  // Effect que guarda el resultado cuando lastTime cambia y hay imagen seleccionada pero resultado no guardado
+  useEffect(() => {
+    if (selectedIndex !== null && lastTime !== null && !hasSelected) {
+      const img = simulatedImages[selectedIndex];
+      if (img) saveResult(img, selectedIndex, lastTime);
+    }
+  }, [lastTime, selectedIndex]);
+
+  const nextRound = () => {
+    if (selectedIndex === null || lastTime === null) {
+      alert('Por favor selecciona una imagen');
+      return;
+    }
+
+    setSelectedIndex(null);
+    setLastTime(null);
+    setIsTimerActive(true);
+
+    setSelectedEmotion(null);
+    setSelectedConfidence(null);
+    setHasSelected(false);
+
+    if (round + 1 >= roundsCount) {
+      setShowResults(true);
+    } else {
+      setRound(round + 1);
+    }
+  };
+
+  const restartTest = () => {
+    setRound(0);
+    setSelectedIndex(null);
+    setIsTimerActive(true);
+    setLastTime(null);
+    setCurrentEmotion('No detectado');
+    setCurrentConfidence(null);
+    setSelectedEmotion(null);
+    setSelectedConfidence(null);
+    setResults([]);
+    setShowResults(false);
+    setSimulatedImages([]);
+    setHasSelected(false);
+    const newImages = pickRandomImages(allImageFiles, roundsCount);
+    setImagesForRounds(newImages);
+  };
+
+  const exportResultsToTxt = () => {
+    if (results.length === 0) return;
+
+    let content = results.map(res =>
+      `🟢 Ronda ${res.round + 1} - Posición ${res.index1to20} (${res.position})
+- Tipo de visión: ${res.type}
+- Severidad: ${res.severity}
+- Emoción: ${res.emotion}
+- Confianza: ${Math.round((res.confidence ?? 0) * 100)}%
+- Tiempo de respuesta: ${res.responseTime.toFixed(2)} segundos
+`).join('\n');
+
+    // Agregar resumen general al final
+    const summary = analyzeResults(results);
+
+    content += `
+
+--------------------
+Resumen General:
+Tiempo promedio: ${summary.avgTime} segundos (${summary.speedLabel})
+Emoción más frecuente: ${summary.mostFrequentEmotion}
+Tipo probable de daltonismo: ${summary.likelyDeficiency}
+Observación: ${summary.feedback}
+`;
+
+    // Descargar txt
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'resultados_daltonismo.txt';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const analyzeResults = (results: TestResult[]) => {
+    if (results.length === 0) {
+      return {
+        avgTime: '0.00',
+        mostFrequentEmotion: 'Desconocido',
+        likelyDeficiency: 'No identificado',
+        speedLabel: 'lento',
+        feedback: 'No se detectó una deficiencia de color clara.',
+      };
+    }
+
+    const avgTime = results.reduce((sum, r) => sum + r.responseTime, 0) / results.length;
+    const emotionCounts = results.reduce((acc, r) => {
+      acc[r.emotion] = (acc[r.emotion] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const mostFrequentEmotion = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Desconocido';
+
+    const colorDeficiencyCount = results.reduce((acc, r) => {
+      if (r.type !== 'normal') acc[r.type] = (acc[r.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const likelyDeficiency = Object.entries(colorDeficiencyCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'No identificado';
+
+    const speedLabel = avgTime < 5 ? 'rápido' : avgTime < 10 ? 'moderado' : 'lento';
+
+    const feedbackMap: Record<string, string> = {
+      protanopia: 'Podrías tener dificultades con los tonos rojos.',
+      deuteranopia: 'Podrías tener dificultades con los tonos verdes.',
+      tritanopia: 'Podrías tener dificultades con los tonos azules.',
+      'No identificado': 'No se detectó una deficiencia de color clara.',
+    };
+
+    return {
+      avgTime: avgTime.toFixed(2),
+      mostFrequentEmotion,
+      likelyDeficiency,
+      speedLabel,
+      feedback: feedbackMap[likelyDeficiency],
+    };
+  };
+
   return (
-    <main className="flex items-center justify-center pt-16 pb-4">
-      <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
-        <header className="flex flex-col items-center gap-9">
-          <div className="w-[500px] max-w-[100vw] p-4">
-            <img
-              src={logoLight}
-              alt="React Router"
-              className="block w-full dark:hidden"
-            />
-            <img
-              src={logoDark}
-              alt="React Router"
-              className="hidden w-full dark:block"
-            />
-          </div>
-        </header>
-        <div className="max-w-[300px] w-full space-y-6 px-4">
-          <nav className="rounded-3xl border border-gray-200 p-6 dark:border-gray-700 space-y-4">
-            <p className="leading-6 text-gray-700 dark:text-gray-200 text-center">
-              What&apos;s next?
-            </p>
-            <ul>
-              {resources.map(({ href, text, icon }) => (
-                <li key={href}>
-                  <a
-                    className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {icon}
-                    {text}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+    <main>
+      {!started && <StartScreen onStart={() => setStarted(true)} />}
+
+      {started && !showResults && currentBaseImage && (
+        <>
+      <h1>Bienvenido al Test de Daltonismo</h1>
+
+      {!showResults && currentBaseImage && (
+        <>
+          <FacialLandmarks
+            onEmotionChange={(emotion, confidence) => {
+              setCurrentEmotion(emotion);
+              setCurrentConfidence(confidence);
+            }}
+          />
+          <h4>Elige la imagen que veas con colores normales</h4>
+          <h2>Ronda {round + 1} de {roundsCount}</h2>
+
+          <Timer
+            isActive={isTimerActive}
+            onStop={(time) => setLastTime(time)}
+          />
+
+          <SimulatedImageGrid
+            originalSrc={currentBaseImage}
+            onImagesGenerated={(images) => {
+              setSimulatedImages(images);
+            }}
+          />
+
+          <ImageGrid
+            images={simulatedImages}
+            onSelect={handleSelection}
+          />
+        </>
+        )}
+
+          {selectedIndex !== null && lastTime !== null && (
+            <>
+              <p style={{ marginTop: '1rem' }}>
+                ✅ Imagen seleccionada: <strong>{selectedIndex + 1}</strong><br />
+                ⏱️ Tiempo: <strong>{lastTime} segundos</strong><br />
+                😊 Emoción: <strong>{selectedEmotion ?? currentEmotion}</strong> ({Math.round(((selectedConfidence ?? currentConfidence) ?? 0) * 100)}%)
+              </p>
+              <button onClick={nextRound} style={{ marginTop: '1rem' }}>
+                Siguiente ronda
+              </button>
+            </>
+          )}
+        </>
+      )}
+
+      {showResults && (
+        <div style={{ textAlign: 'center' }}>
+          <ResultScreen
+            results={results}
+            onRestart={() => {
+              restartTest();
+              setStarted(false);  // Vuelve a mostrar pantalla inicio al reiniciar
+            }}
+          />
+          <ResultCharts results={results} />
+          <button onClick={exportResultsToTxt} style={{ marginTop: '1rem' }}>
+            📥 Descargar resultados
+          </button>
         </div>
-      </div>
+      )}
     </main>
   );
 }
-
-const resources = [
-  {
-    href: "https://reactrouter.com/docs",
-    text: "React Router Docs",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
-      >
-        <path
-          d="M9.99981 10.0751V9.99992M17.4688 17.4688C15.889 19.0485 11.2645 16.9853 7.13958 12.8604C3.01467 8.73546 0.951405 4.11091 2.53116 2.53116C4.11091 0.951405 8.73546 3.01467 12.8604 7.13958C16.9853 11.2645 19.0485 15.889 17.4688 17.4688ZM2.53132 17.4688C0.951566 15.8891 3.01483 11.2645 7.13974 7.13963C11.2647 3.01471 15.8892 0.951453 17.469 2.53121C19.0487 4.11096 16.9854 8.73551 12.8605 12.8604C8.73562 16.9853 4.11107 19.0486 2.53132 17.4688Z"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "https://rmx.as/discord",
-    text: "Join Discord",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="20"
-        viewBox="0 0 24 20"
-        fill="none"
-        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
-      >
-        <path
-          d="M15.0686 1.25995L14.5477 1.17423L14.2913 1.63578C14.1754 1.84439 14.0545 2.08275 13.9422 2.31963C12.6461 2.16488 11.3406 2.16505 10.0445 2.32014C9.92822 2.08178 9.80478 1.84975 9.67412 1.62413L9.41449 1.17584L8.90333 1.25995C7.33547 1.51794 5.80717 1.99419 4.37748 2.66939L4.19 2.75793L4.07461 2.93019C1.23864 7.16437 0.46302 11.3053 0.838165 15.3924L0.868838 15.7266L1.13844 15.9264C2.81818 17.1714 4.68053 18.1233 6.68582 18.719L7.18892 18.8684L7.50166 18.4469C7.96179 17.8268 8.36504 17.1824 8.709 16.4944L8.71099 16.4904C10.8645 17.0471 13.128 17.0485 15.2821 16.4947C15.6261 17.1826 16.0293 17.8269 16.4892 18.4469L16.805 18.8725L17.3116 18.717C19.3056 18.105 21.1876 17.1751 22.8559 15.9238L23.1224 15.724L23.1528 15.3923C23.5873 10.6524 22.3579 6.53306 19.8947 2.90714L19.7759 2.73227L19.5833 2.64518C18.1437 1.99439 16.6386 1.51826 15.0686 1.25995ZM16.6074 10.7755L16.6074 10.7756C16.5934 11.6409 16.0212 12.1444 15.4783 12.1444C14.9297 12.1444 14.3493 11.6173 14.3493 10.7877C14.3493 9.94885 14.9378 9.41192 15.4783 9.41192C16.0471 9.41192 16.6209 9.93851 16.6074 10.7755ZM8.49373 12.1444C7.94513 12.1444 7.36471 11.6173 7.36471 10.7877C7.36471 9.94885 7.95323 9.41192 8.49373 9.41192C9.06038 9.41192 9.63892 9.93712 9.6417 10.7815C9.62517 11.6239 9.05462 12.1444 8.49373 12.1444Z"
-          strokeWidth="1.5"
-        />
-      </svg>
-    ),
-  },
-];
