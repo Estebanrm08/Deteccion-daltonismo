@@ -31,7 +31,7 @@ const FacialLandmarks: React.FC<Props> = ({ onEmotionChange }) => {
     const loadModels = async () => {
       await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
       await faceapi.nets.faceExpressionNet.loadFromUri('/models');
-      console.log('✅ Modelos cargados');
+      console.log('Modelos cargados');
     };
 
     const setupCameraAndDetection = async () => {

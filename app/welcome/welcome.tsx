@@ -19,8 +19,8 @@ type TestResult = {
   confidence: number | null;
   responseTime: number;
   round: number;
-  position: string; // fila x columna
-  index1to20: number; // posición de 1 a 20 para mostrar
+  position: string; 
+  index1to20: number; 
 };
 
 const roundsCount = 5;
@@ -60,7 +60,7 @@ export default function Welcome() {
   const [isTimerActive, setIsTimerActive] = useState(true);
   const [lastTime, setLastTime] = useState<number | null>(null);
 
-  // Emoción en vivo detectada (actualiza siempre)
+  // Emoción en vivo detectada 
   const [currentEmotion, setCurrentEmotion] = useState<string>('No detectado');
   const [currentConfidence, setCurrentConfidence] = useState<number | null>(null);
 
@@ -320,7 +320,7 @@ Observación: ${summary.feedback}
             results={results}
             onRestart={() => {
               restartTest();
-              setStarted(false);  // Vuelve a mostrar pantalla inicio al reiniciar
+              setStarted(false);  
             }}
           />
           <ResultCharts results={results} />

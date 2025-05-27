@@ -12,7 +12,7 @@ const Timer: React.FC<TimerProps> = ({ isActive, onStop }) => {
     let interval: NodeJS.Timeout;
 
     if (isActive) {
-      setSeconds(0);  // <-- Aquí reseteamos el tiempo cuando se activa
+      setSeconds(0);  
       interval = setInterval(() => {
         setSeconds(prev => prev + 1);
       }, 1000);
@@ -23,7 +23,6 @@ const Timer: React.FC<TimerProps> = ({ isActive, onStop }) => {
     };
   }, [isActive]);
 
-  // Solo reportamos el tiempo cuando se pausa (isActive === false)
   useEffect(() => {
     if (!isActive) {
       onStop(seconds);

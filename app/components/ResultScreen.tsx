@@ -3,7 +3,7 @@ import React from 'react';
 type Result = {
   id: string;
   type: 'normal' | 'protanopia' | 'deuteranopia' | 'tritanopia';
-  severity: 0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.6 | 0.8 | 1.0; // Incluye 0.1
+  severity: 0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.6 | 0.8 | 1.0; 
   emotion: string;
   confidence: number | null;
   responseTime: number;
